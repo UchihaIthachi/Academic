@@ -1,0 +1,102 @@
+				+--------------------------+
+				|        CS 2042           |
+				| PROJECT 2: USER PROGRAMS |
+				|   DESIGN DOCUMENT        |
+				+--------------------------+
+
+
+
+---- PRELIMINARIES ----
+
+* Some university’s implementation suggestions
+- https://www.cs.jhu.edu/~huang/cs318/fall21/project/project2.html
+*blogs
+- https://ycruan.github.io/files/162_project2_design
+* Some body's implementation
+- https://github.com/ryanphuang/PintosM 
+
+
+ARGUMENT PASSING
+================
+
+---- DATA STRUCTURES ----
+
+>> A1: The `struct ArgumentAddress` structure stores the address of an argument in the stack. It contains a `list_elem` for list operations and a `uint32_t` to store the address.
+
+---- ALGORITHMS ----
+
+>> A2: We implemented argument parsing as follows:
+- `push_program_name` pushes the program name (executable file name) onto the stack.
+- `push_argument` pushes a single argument onto the stack and adds its address to `arg_list`.
+- `push_all_arguments` parses and pushes all command-line arguments onto the stack.
+- `set_stack_alignment` ensures proper stack alignment.
+- `push_null_pointer_sentinel` marks the end of arguments.
+- `push_single_argument_address` pushes the address of a single argument.
+- `push_all_argument_addresses` iterates through `arg_list` to push argument addresses.
+- `push_first_argument_address` pushes the address of the first argument.
+- `push_argument_count` pushes the total number of arguments.
+- `push_fake_return_address` simulates a function call return.
+
+---- RATIONALE ----
+
+>> A3: Pintos implements strtok_r() instead of strtok() to ensure thread safety. strtok_r() uses a reentrant version of strtok that allows multiple threads to safely parse strings.
+
+>> A4: Advantages of the Unix approach where the shell separates commands into an executable name and arguments:
+
+Flexibility: Separating the executable name and arguments allows for easy modification of the command line and supports command-line options.
+
+Consistency: Using the Unix approach makes Pintos more compatible with existing Unix-like systems, facilitating code portability and familiarity for developers.
+
+SYSTEM CALL
+================
+
+>> B1: New data structures and variables
+- `struct file_descriptor`: Represents a file descriptor with fields for the file descriptor (fd), a pointer to the opened file (file), and a list element (fdelem) for list operations.
+- `lock file_system_lock`: A lock used for file system operations to ensure thread safety.
+
+   Purpose:
+- `struct file_descriptor`: To associate file descriptors with open files.
+- `lock file_system_lock`: To synchronize file system operations to prevent data corruption in a multi-threaded environment.
+
+>> B2: File descriptors are unique within a single process. File descriptors are associated with open files through the `file` member of the `struct file_descriptor`. Each file descriptor in a process refers to a unique `struct file` in the `file` member.
+
+---- ALGORITHMS ----
+
+>> B3: Reading and writing user data from the kernel
+- Reading and writing are performed through the system calls `read` and `write`. Data is read from or written to files using the `file_read` and `file_write` functions.
+- When reading or writing data from the user, checks ensure the validity of user pointers and the data buffer's user memory region to avoid errors and program termination.
+
+>> B4: Number of page table inspections
+- For copying 4,096 bytes: At least one inspection for every page (4,096 bytes / 4 KB page size = 1 page inspection).
+- For copying 2 bytes: Two inspections at most - one for the source page and one for the destination page.
+- There's room for improvement by implementing page caching to reduce redundant inspections.
+
+>> B5: "Wait" system call and process termination
+- The "wait" system call interacts with process termination by blocking if the child process is still running. It unblocks once the child terminates and returns the child's exit status.
+
+>> B6: Handling bad pointer values
+- Any bad pointer values that are detected, such as in system calls, lead to process termination with an exit status of -1.
+- To manage error handling effectively, the code follows a strategy of checking the validity of user pointers and buffer regions at each step to detect errors early.
+- When an error is detected, resources are freed using appropriate locks and buffers, ensuring that there are no memory leaks.
+
+---- SYNCHRONIZATION ----
+
+>> B7: Ensuring "exec" system call doesn't return prematurely
+- The code ensures that the "exec" system call doesn't return until the new executable has completed loading by acquiring and releasing the `file_system_lock 
+- If loading fails, it returns -1 to indicate failure.
+
+>> B8: Synchronization between parent (P) and child (C)
+- When P calls "wait(C)" before C exits, P is blocked until C exits, ensuring proper synchronization.
+- When P calls "wait(C)" after C exits, P immediately obtains C's exit status.
+- To ensure resource cleanup, file descriptors are closed when C exits or if P terminates without waiting, avoiding resource leaks.
+
+>> B9: Implementation of user memory access from the kernel
+- The code implements user memory access by checking the validity of user pointers and buffer regions. This approach is chosen for early error detection and to prevent program termination when bad pointer values are encountered.
+
+>> B10: Advantages of file descriptor design
+- File descriptors are an efficient way to associate open files with processes.
+- They provide a clear mechanism for tracking and managing open files within a process.
+
+>> B11: Default tid_t to pid_t mapping
+- The code uses the default identity mapping from tid_t to pid_t. This approach is chosen for simplicity, as the tid_t already serves as a unique identifier for threads.
+

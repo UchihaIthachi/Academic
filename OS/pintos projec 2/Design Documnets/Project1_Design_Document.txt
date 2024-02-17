@@ -1,0 +1,124 @@
+			+--------------------+
+			|        CS 2043     |
+			| PROJECT 1: THREADS |
+			|   DESIGN DOCUMENT  |
+			+--------------------+
+				   
+------ PRELIMINARIES ------
+
+>> resources
+
+* Some university’s implementation suggestions
+ https://www.cs.jhu.edu/~huang/cs318/fall21/project/project1.html
+* Some body's implementation
+https://github.com/haoweiz/pintos/tree/master
+*blog
+https://www.cnblogs.com/haoweizh/category/1375619.html
+
+			     ALARM CLOCK
+			     ===========
+
+------ DATA STRUCTURES ------
+
+A1: 
+>>The timer_sleep() function calculates the end time, and the timer interrupt handler (timer_interrupt()) checks if the elapsed time is less than the requested sleep time. If it is, the function yields the CPU, effectively putting the thread to sleep until the required number of timer ticks have passed.
+
+------ ALGORITHMS ------
+
+A2:
+>>The "timer_sleep()" function calculates the end time, and the timer interrupt handler ("timer_interrupt()") checks if the elapsed time is less than the requested sleep time. If it is, the function yields the CPU, effectively putting the thread to sleep until the required number of timer ticks have passed.
+
+A3: 
+>>In the "timer_interrupt()", we use the "thread_foreach" function to check sleeping threads. This minimizes the time spent in the timer interrupt handler because we only check and wake up threads when needed.
+
+------ SYNCHRONIZATION ------
+
+A4: 
+>>To mitigate the risk of race conditions occurring when multiple threads concurrently invoke the `timer_sleep()` function, we employ a technique where we temporarily disable interrupts. This approach ensures that the operation of setting the "sleep_ticks" value and blocking the thread is performed atomically and without interference from other threads.
+
+A5: 
+>>To prevent race conditions when a timer interrupt coincides with a "timer_sleep()" call, we exploit the inherent characteristic of the timer interrupt, which operates with interrupts already disabled. This property allows us to manage "timer_sleep()" without the need to explicitly disable interrupts. Therefore, while decrementing "sleep_ticks" in "timer_interrupt()", there is no need to disable interrupts.
+
+-------- RATIONALE ------
+
+A6: We chose this design to improve the thread sleep mechanism. The original busy-wait mechanism was inefficient and consumed unnecessary CPU resources. The new design enhances the functionality and efficiency by blocking threads until they are ready to execute. It is superior to the busy-wait approach as it reduces CPU wastage, improving the system's performance and responsiveness.
+
+			 PRIORITY SCHEDULING
+			 ===================
+
+------ DATA STRUCTURES ------
+
+>> B1:  
+Declaration of New or Changed Structures/Variables
+
+>>In the struct thread, you have introduced the following fields:
+	>struct list held_locks to keep track of locks held by the thread.
+	>struct lock *waiting_lock to store the lock the thread is waiting to acquire.
+	>int base_priority for maintaining the original priority of the thread.
+
+>>For the struct lock, an additional field int max_priority is introduced to maintain the maximum priority among all threads that have acquired the lock.
+
+>> B2:  
+Data Structure for Priority Donation
+
+>>The data structure for priority donation primarily relies on the modifications made to "struct thread" and "struct lock".
+
+>>In "struct thread", "held_locks" keeps a list of locks held by the thread, and "waiting_lock" records the lock the thread is waiting to acquire.
+
+>>The "base_priority" field stores the thread's original priority.
+
+>>In "struct lock", "max_priority" stores the maximum priority of all threads acquiring the lock, facilitating priority donation.
+
+------ ALGORITHMS ------
+
+>> B3: 
+Prioritizing the First Awakening of High-Priority Threads
+
+>>To ensure that the highest-priority thread among those waiting in the semaphore's queue is awakened first when a thread is unblocked due to a semaphore operation, we utilize a mechanism where the thread with the highest priority is given precedence.
+
+>>The list_max function is employed to identify the thread with the highest priority in the waiters' list.
+
+>> B4: 
+Sequence of Events in lock_acquire (Priority Donation)
+
+>>When lock_acquire is called, the following sequence of events occurs:
+	>The thread updates its waiting_lock to the lock it's attempting to acquire.
+	>It propagates its priority to the holder of the lock.
+	>The holder's priority is recalculated based on the maximum priority of its 	acquired locks.
+	>The thread is blocked using sema_down.
+
+>>These steps ensure that higher-priority threads waiting for locks have the opportunity to preempt the lock holder.
+
+>> B5: 
+Sequence of Events in lock_release (Priority Donation)
+
+>>When lock_release is invoked for a lock that a higher-priority thread is awaiting, the subsequent sequence of actions unfolds:
+
+	>The lock holder releases the lock and triggers sema_up.
+	>The lock holder is removed from the lock's list.
+	>The holder's priority is recalculated based on the maximum priority of its 	remaining acquired locks.
+	>If the thread's priority has increased, thread_yield is called to potentially 	yield the CPU immediately.
+
+------ SYNCHRONIZATION ------
+
+>> B6:   
+
+Managing Race Conditions in thread_set_priority
+
+>>In situations where multiple threads concurrently invoke thread_set_priority, a potential race condition arises. This scenario involves two threads simultaneously reading the same priority value and subsequently triggering thread_yield.
+
+>>To mitigate this race condition, it is advisable to employ a lock to synchronize access to the thread_set_priority function.
+
+------ RATIONALE ------
+
+>> B7: 
+
+Rationale for Design
+
+>>The chosen design is essential for implementing priority scheduling and priority donation in Pintos, which is required for various synchronization mechanisms and thread scheduling.
+
+>>The modifications are well-considered and necessary to maintain the integrity of priority scheduling.
+
+>>Common synchronization practices such as the use of locks and semaphores are employed to ensure thread safety and reliable priority donation.
+
+			   
