@@ -1,0 +1,9 @@
+let rec Fib (s, e, x, y, T ) = 
+	x ge e -> T
+	| x ge s -> Fib  (s, e, y, (x+y), (T aug x))
+	| Fib  (s, e, y, (x+y), T)
+in
+let Range s e = 
+	Fib (s, e, 0, 1, nil)
+in Print (Range 4 30)
+//Output : (5, 8, 13, 21)

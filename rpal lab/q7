@@ -1,0 +1,6 @@
+let CheckOddEven n = 
+	n eq (n/2) * 2 -> 'Even' | 'Odd' 
+in 
+Print(CheckOddEven(8))
+//Output : 'Even'
+

@@ -1,0 +1,7 @@
+let MaxVal x y = 
+	x ls y -> y | x 
+in 
+Print ((-11) @MaxVal 46 @MaxVal 0)
+//Output : 46
+
+

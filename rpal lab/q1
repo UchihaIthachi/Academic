@@ -1,0 +1,9 @@
+let CheckValue = 
+	fn x. x ls 0 -> 'Negative' 
+	| x eq 0 -> 'Zero' 
+	| 'Positive' 
+in 
+Print(CheckValue (-1))
+//Output : 'Negative'
+
+

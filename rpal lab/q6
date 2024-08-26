@@ -1,0 +1,13 @@
+let rec Rev n m =
+	(n - (n/10)*10) eq 0 -> m |  Rev (n/10) (m*10 + n - (n/10)*10) 
+in
+let Is_palind x T = 
+	(x eq Rev x 0) -> (T aug x) | T 
+in
+let rec Next_num s e T = 
+	s eq e -> T | Next_num (s+1) e (Is_palind s T) 
+in
+let Range s e = 
+	Next_num s e nil
+in print(Range 50 250)
+//Output : (55, 66, 77, 88, 99, 111, 121, 131, 141, 151, 161, 171, 181, 191, 212, 222, 232, 242)

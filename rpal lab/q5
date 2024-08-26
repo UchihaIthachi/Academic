@@ -1,0 +1,8 @@
+let rec Convert s =  
+	s eq '' -> '' | Conc (Convert (Stern s)) (Stem s)
+within
+Is_palind s = 
+	not Isstring s-> 'error'| s eq Convert s
+in 
+Print (Is_palind '167761')
+//Output : true
